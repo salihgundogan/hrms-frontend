@@ -3,52 +3,58 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 
-// Yeni Layout ve View bileşenlerimizi import ediyoruz
+// Gerekli tüm bileşenleri import ediyoruz.
 import MainLayout from '../layouts/MainLayout.vue';
 import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
-// Henüz oluşturmadığımız ama birazdan oluşturacağımız diğer view'ları da hazırlık olarak import edelim
 import ProfileView from '../views/ProfileView.vue';
 import TeamView from '../views/TeamView.vue';
 import LeaveManagementView from '../views/LeaveManagementView.vue';
+import VerifyEmailView from '../views/VerifyEmailView.vue';
 
 
 const routes = [
-    // 1. Rota Grubu: Layout'un DIŞINDA kalan sayfalar
+    // 1. Rota Grubu: Layout'un DIŞINDA kalan, halka açık sayfalar
     { 
         path: '/login', 
         name: 'Login', 
         component: LoginView 
     },
+    { 
+        path: '/verify-email/:token', 
+        name: 'VerifyEmail', 
+        component: VerifyEmailView // DÜZELTME: Bu rota artık halka açık.
+    },
 
-    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan sayfalar
+    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, giriş gerektiren sayfalar
     {
-        path: '/', // Ana yol
-        component: MainLayout, // Bu yola gidildiğinde MainLayout gösterilir
-        meta: { requiresAuth: true }, // Bu grubun tamamı giriş gerektirir
+        path: '/',
+        component: MainLayout,
+        meta: { requiresAuth: true },
         children: [
-            // Bu sayfalar, MainLayout'un içindeki <router-view />'e yerleştirilir.
+            // Ana sayfa için bir yönlendirme
+            { path: '', redirect: '/dashboard' }, 
             {
-                path: 'dashboard', // URL: /dashboard
+                path: 'dashboard',
                 name: 'Dashboard',
                 component: DashboardView,
             },
             {
-                path: 'profile', // URL: /profile
+                path: 'profile',
                 name: 'Profile',
                 component: ProfileView,
             },
             {
-                path: 'team', // URL: /team
+                path: 'team',
                 name: 'Team',
                 component: TeamView,
-                meta: { roles: ['manager', 'hr_admin'] } // Sadece yönetici ve İK görebilir
+                meta: { roles: ['manager', 'hr_admin'] }
             },
             {
-                path: 'admin/leaves', // URL: /admin/leaves
+                path: 'admin/leaves',
                 name: 'LeaveManagement',
                 component: LeaveManagementView,
-                meta: { roles: ['hr_admin'] } // Sadece İK görebilir
+                meta: { roles: ['hr_admin'] }
             },
         ]
     },
@@ -71,8 +77,12 @@ const router = createRouter({
 // Navigation Guard (Kimlik ve Yetki Kontrolü) - Bu kısım aynı kalıyor.
 router.beforeEach((to, from, next) => {
     const authStore = useAuthStore();
-    const isAuthenticated = authStore.isAuthenticated;
-    const userRole = authStore.userRole;
+    const {isAuthenticated} = authStore;
+
+    // Giriş yapmış bir kullanıcı login sayfasına gitmeye çalışırsa, onu dashboard'a yönlendir.
+    if (to.name === 'Login' && isAuthenticated) {
+        return next({ name: 'Dashboard' });
+    }
 
     // Giriş gerektiren bir sayfa mı?
     if (to.meta.requiresAuth && !isAuthenticated) {
@@ -80,8 +90,8 @@ router.beforeEach((to, from, next) => {
     }
 
     // Belirli bir rol gerektiren bir sayfa mı?
-    if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-        // Yetkisi yoksa, ana sayfaya yönlendir.
+    // Not: Kullanıcı bilgisi henüz yüklenmemiş olabilir, bu yüzden userRole'ü kontrol et.
+    if (to.meta.roles && authStore.userRole && !to.meta.roles.includes(authStore.userRole)) {
         return next('/dashboard');
     }
 

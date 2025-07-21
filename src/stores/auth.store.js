@@ -68,6 +68,15 @@ export const useAuthStore = defineStore('auth', {
             console.error("Şifre güncellenemedi:", error);
             throw error.response.data.message || 'Bilinmeyen bir hata oluştu.';
         }
+        },
+        async verifyEmail(token) {
+        try {
+            // Backend'deki doğrulama API'sine istek gönderiyoruz.
+            const response = await apiClient.get(`/auth/verify-email/${token}`);
+            return { success: true, message: response.data.message };
+        } catch (error) {
+            throw error.response?.data?.message || 'Doğrulama sırasında bir hata oluştu.';
+        }
     }
     },
 });
