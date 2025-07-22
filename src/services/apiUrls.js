@@ -4,7 +4,7 @@
 // Her adresi tam ve bütün olarak yazarak tüm belirsizlikleri ortadan kaldırıyoruz.
 // Bu, en güvenilir yöntemdir.
 
-const BASE_URL = 'https://seven-singers-cover.loca.lt/api';
+const BASE_URL = 'https://plain-suits-pull.loca.lt/api';
 
 export const API_URLS = {
     LOGIN: `${BASE_URL}/auth/login`,
