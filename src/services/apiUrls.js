@@ -1,20 +1,22 @@
 // src/services/apiUrls.js
 
-// Bu dosya, projedeki tüm API endpoint'lerini merkezi bir yerde tutar.
-// Ana adres (baseURL), apiClient.js dosyasında tanımlanmıştır.
+// Yeni localtunnel adresini buraya yazıyoruz.
+const BASE_URL = 'https://lazy-horses-carry.loca.lt/api';
+
+// Geri kalan her şey, bu yeni adresi otomatik olarak kullanacaktır.
 export const API_URLS = {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REGISTER: '/auth/register',
-    VERIFY_EMAIL: '/auth/verify-email',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
+    LOGIN: `${BASE_URL}/auth/login`,
+    LOGOUT: `${BASE_URL}/auth/logout`,
+    REGISTER: `${BASE_URL}/auth/register`,
+    VERIFY_EMAIL: `${BASE_URL}/auth/verify-email`,
+    FORGOT_PASSWORD: `${BASE_URL}/auth/forgot-password`,
+    RESET_PASSWORD: `${BASE_URL}/auth/reset-password`,
     
-    GET_ME: '/users/me',
-    UPDATE_ME: '/users/me',
-    CHANGE_PASSWORD: '/users/me/change-password',
-    GET_ALL_USERS: '/users',
-    GET_MY_TEAM: '/users/my-team',
+    GET_ME: `${BASE_URL}/users/me`,
+    UPDATE_ME: `${BASE_URL}/users/me`,
+    CHANGE_PASSWORD: `${BASE_URL}/users/me/change-password`,
+    GET_ALL_USERS: `${BASE_URL}/users`,
+    GET_MY_TEAM: `${BASE_URL}/users/my-team`,
     
-    LEAVES: '/leaves',
+    LEAVES: `${BASE_URL}/leaves`,
 };

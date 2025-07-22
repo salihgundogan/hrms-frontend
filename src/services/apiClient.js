@@ -1,13 +1,10 @@
 // src/services/apiClient.js
 import axios from 'axios';
-import { API_URLS } from './apiUrls';
 import { useAuthStore } from '../stores/auth.store';
 
 // Axios'un kendi "Singleton" instance'ını oluşturuyoruz.
+// baseURL'i buradan kaldırdık, çünkü her adres apiUrls.js'de tam olarak belirtiliyor.
 const apiClient = axios.create({
-    // === DEĞİŞİKLİK BURADA: baseURL'i geri ekledik ===
-    // Bu, tüm isteklerin başına otomatik olarak bu adresi ekler.
-    baseURL: 'https://gold-lies-kick.loca.lt/', 
     headers: { 'Content-Type': 'application/json' },
 });
 
