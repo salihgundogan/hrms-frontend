@@ -1,13 +1,17 @@
+// src/services/apiClient.js
 import axios from 'axios';
-import { API_URLS } from './apiUrls.js';
+import { API_URLS } from './apiUrls';
 import { useAuthStore } from '../stores/auth.store';
 
-// axios nesnesini oluşturduk
+// Axios'un kendi "Singleton" instance'ını oluşturuyoruz.
 const apiClient = axios.create({
+    // === DEĞİŞİKLİK BURADA: baseURL'i geri ekledik ===
+    // Bu, tüm isteklerin başına otomatik olarak bu adresi ekler.
+    baseURL: 'https://stupid-hornets-change.loca.lt/api', 
     headers: { 'Content-Type': 'application/json' },
 });
 
-// her isteğin öncesinde doğrulama
+// Axios Interceptor'ları (Request ve Response) aynı kalacak...
 apiClient.interceptors.request.use(config => {
     const authStore = useAuthStore();
     if (authStore.token) {
@@ -16,16 +20,12 @@ apiClient.interceptors.request.use(config => {
     return config;
 });
 
-// cevap geldikten sonra doğrulama. eğer yetki yoksa (expired olabilir) 401 ve login ekranı
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response) {
-            if (error.response.status === 401) {
-                const authStore = useAuthStore();
-                console.log("Token geçersiz veya süresi dolmuş. Otomatik çıkış yapılıyor...");
-                authStore.logout();
-            }
+        if (error.response && error.response.status === 401) {
+            const authStore = useAuthStore();
+            authStore.logout();
         }
         return Promise.reject(error);
     }

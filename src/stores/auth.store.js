@@ -1,3 +1,5 @@
+// src/stores/auth.store.js
+
 import { defineStore } from 'pinia';
 import apiClient from '../services/apiClient';
 import { API_URLS } from '../services/apiUrls';
@@ -23,13 +25,7 @@ export const useAuthStore = defineStore('auth', {
                 if (userData.profileImage) {
                     formData.append('profileImage', userData.profileImage);
                 }
-
-                // DÜZELTME: Axios bir FormData objesi aldığında,
-                // Content-Type başlığını tarayıcının otomatik olarak
-                // doğru bir şekilde ayarlamasına izin veriyoruz.
-                // Bu yüzden 'headers' bölümünü tamamen siliyoruz.
                 const response = await apiClient.post(API_URLS.REGISTER, formData);
-                
                 return response.data.message;
             } catch (error) {
                 console.error("Kayıt başarısız:", error);
@@ -66,59 +62,45 @@ export const useAuthStore = defineStore('auth', {
         },
         async updateProfile(updateData) {
             try {
-                // API'mizdeki PUT /api/users/me adresine istek gönderiyoruz.
                 const response = await apiClient.put(API_URLS.UPDATE_ME, updateData);
-                
-                // Başarılı olursa, store'daki 'user' objesini sunucudan gelen
-                // en güncel veriyle değiştiriyoruz. Bu, arayüzün anında güncellenmesini sağlar.
                 this.user = response.data.user;
-                
-                // Başarı mesajını, arayüzde göstermek için geri döndürüyoruz.
                 return response.data.message;
             } catch (error) {
                 console.error("Profil güncellenemedi:", error);
-                // Hata mesajını, arayüzde göstermek için geri fırlatıyoruz.
                 throw error.response.data.message || 'Bilinmeyen bir hata oluştu.';
             }
         },
         async changePassword(passwordData) {
-        try {
-            // API'mizdeki PUT /api/users/me/change-password adresine istek gönderiyoruz.
-            const response = await apiClient.put(API_URLS.CHANGE_PASSWORD, passwordData);
-            return response.data.message; // Başarı mesajını geri döndür
-        } catch (error) {
-            console.error("Şifre güncellenemedi:", error);
-            throw error.response.data.message || 'Bilinmeyen bir hata oluştu.';
-        }
+            try {
+                const response = await apiClient.put(API_URLS.CHANGE_PASSWORD, passwordData);
+                return response.data.message;
+            } catch (error) {
+                console.error("Şifre güncellenemedi:", error);
+                throw error.response.data.message || 'Bilinmeyen bir hata oluştu.';
+            }
         },
         async verifyEmail(token) {
-        try {
-            // Backend'deki doğrulama API'sine istek gönderiyoruz.
-            const response = await apiClient.get(`/auth/verify-email/${token}`);
-            return { success: true, message: response.data.message };
-        } catch (error) {
-            throw error.response?.data?.message || 'Doğrulama sırasında bir hata oluştu.';
-        }
+            try {
+                // DÜZELTME: Adresi artık merkezi yerden alıyoruz.
+                const response = await apiClient.get(`${API_URLS.VERIFY_EMAIL}/${token}`);
+                return { success: true, message: response.data.message };
+            } catch (error) {
+                throw error.response?.data?.message || 'Doğrulama sırasında bir hata oluştu.';
+            }
         },
         async forgotPassword(email) {
             try {
-                // Backend'deki /api/auth/forgot-password adresine istek gönderiyoruz.
                 const response = await apiClient.post(API_URLS.FORGOT_PASSWORD, { email });
-                // Başarılı olursa, sunucudan gelen mesajı geri döndürüyoruz.
                 return response.data.message;
             } catch (error) {
                 console.error("Şifre sıfırlama isteği başarısız:", error);
-                // Hata mesajını, arayüzde göstermek için geri fırlatıyoruz.
                 throw error.response?.data?.message || 'Bilinmeyen bir hata oluştu.';
             }
         },
-
-        // --- YENİ EKLENEN ŞİFREYİ SIFIRLAMA EYLEMİ ---
         async resetPassword(token, password, passwordConfirm) {
             try {
-                // Backend'deki /api/auth/reset-password/:token adresine istek gönderiyoruz.
+                // DÜZELTME: Adresi artık merkezi yerden alıyoruz.
                 const response = await apiClient.put(`${API_URLS.RESET_PASSWORD}/${token}`, { password, passwordConfirm });
-                // Başarılı olursa, sunucudan gelen mesajı geri döndürüyoruz.
                 return response.data.message;
             } catch (error) {
                 console.error("Şifre sıfırlama başarısız:", error);
