@@ -1,6 +1,6 @@
 // bütün endpointler burada
 export const API_URLS = {
-    BASE: 'http://localhost:5001/api',
+    BASE: 'https://little-dots-sneeze.loca.lt/',
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
     LOGOUT: '/auth/logout',
