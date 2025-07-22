@@ -7,7 +7,7 @@ import { useAuthStore } from '../stores/auth.store';
 const apiClient = axios.create({
     // === DEĞİŞİKLİK BURADA: baseURL'i geri ekledik ===
     // Bu, tüm isteklerin başına otomatik olarak bu adresi ekler.
-    baseURL: 'https://stupid-hornets-change.loca.lt/api', 
+    baseURL: 'https://rare-tools-smash.loca.lt/', 
     headers: { 'Content-Type': 'application/json' },
 });
 
