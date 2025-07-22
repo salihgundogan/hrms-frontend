@@ -14,6 +14,28 @@ export const useAuthStore = defineStore('auth', {
         userRole: (state) => state.user?.role,
     },
     actions: {
+        async register(userData) {
+            try {
+                const formData = new FormData();
+                formData.append('name', userData.name);
+                formData.append('email', userData.email);
+                formData.append('password', userData.password);
+                if (userData.profileImage) {
+                    formData.append('profileImage', userData.profileImage);
+                }
+
+                // DÜZELTME: Axios bir FormData objesi aldığında,
+                // Content-Type başlığını tarayıcının otomatik olarak
+                // doğru bir şekilde ayarlamasına izin veriyoruz.
+                // Bu yüzden 'headers' bölümünü tamamen siliyoruz.
+                const response = await apiClient.post(API_URLS.REGISTER, formData);
+                
+                return response.data.message;
+            } catch (error) {
+                console.error("Kayıt başarısız:", error);
+                throw error.response?.data?.message || 'Bilinmeyen bir hata oluştu.';
+            }
+        },
         async login(email, password) {
             try {
                 const response = await apiClient.post(API_URLS.LOGIN, { email, password });
@@ -77,6 +99,31 @@ export const useAuthStore = defineStore('auth', {
         } catch (error) {
             throw error.response?.data?.message || 'Doğrulama sırasında bir hata oluştu.';
         }
-    }
+        },
+        async forgotPassword(email) {
+            try {
+                // Backend'deki /api/auth/forgot-password adresine istek gönderiyoruz.
+                const response = await apiClient.post(API_URLS.FORGOT_PASSWORD, { email });
+                // Başarılı olursa, sunucudan gelen mesajı geri döndürüyoruz.
+                return response.data.message;
+            } catch (error) {
+                console.error("Şifre sıfırlama isteği başarısız:", error);
+                // Hata mesajını, arayüzde göstermek için geri fırlatıyoruz.
+                throw error.response?.data?.message || 'Bilinmeyen bir hata oluştu.';
+            }
+        },
+
+        // --- YENİ EKLENEN ŞİFREYİ SIFIRLAMA EYLEMİ ---
+        async resetPassword(token, password, passwordConfirm) {
+            try {
+                // Backend'deki /api/auth/reset-password/:token adresine istek gönderiyoruz.
+                const response = await apiClient.put(`${API_URLS.RESET_PASSWORD}/${token}`, { password, passwordConfirm });
+                // Başarılı olursa, sunucudan gelen mesajı geri döndürüyoruz.
+                return response.data.message;
+            } catch (error) {
+                console.error("Şifre sıfırlama başarısız:", error);
+                throw error.response?.data?.message || 'Bilinmeyen bir hata oluştu.';
+            }
+        }
     },
 });
