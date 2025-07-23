@@ -1,7 +1,6 @@
 // src/services/apiUrls.js
 
 // Yeni localtunnel adresini buraya yazıyoruz.
-const BASE_URL = 'https://lazy-horses-carry.loca.lt/api';
 
 // Geri kalan her şey, bu yeni adresi otomatik olarak kullanacaktır.
 export const API_URLS = {

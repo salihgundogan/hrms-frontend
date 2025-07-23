@@ -1,3 +1,4 @@
+<!-- src/views/LoginView.vue -->
 <script setup>
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth.store';
@@ -12,9 +13,11 @@ async function handleLogin() {
   error.value = null;
   isLoading.value = true;
   try {
+    // Artık Supabase'i çağıran store eylemini kullanıyoruz.
     await authStore.login(email.value, password.value);
+    // Yönlendirme işlemini artık store'un kendisi yapıyor.
   } catch (err) {
-    error.value = err.response?.data?.message || 'Bilinmeyen bir hata oluştu.';
+    error.value = err.message || 'Bilinmeyen bir hata oluştu.';
   } finally {
     isLoading.value = false;
   }

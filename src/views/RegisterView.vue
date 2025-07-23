@@ -1,56 +1,30 @@
+<!-- src/views/RegisterView.vue (Nihai Versiyon) -->
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 
 const authStore = useAuthStore();
-const router = useRouter();
-
-// Form alanları için reaktif değişkenler
 const name = ref('');
 const email = ref('');
 const password = ref('');
-const profileImage = ref(null); // Resim dosyası için
-
 const isLoading = ref(false);
 const error = ref(null);
 const successMessage = ref(null);
-
-// Kullanıcı bir resim dosyası seçtiğinde bu fonksiyon çalışır.
-function onFileChange(event) {
-  const files = event.target.files;
-  if (files.length > 0) {
-    profileImage.value = files[0];
-    // === KONTROL NOKTASI 1 ===
-    console.log("Dosya seçildi:", profileImage.value);
-  }
-}
-
 
 async function handleRegister() {
   error.value = null;
   successMessage.value = null;
   isLoading.value = true;
-
   try {
     const userData = {
       name: name.value,
       email: email.value,
       password: password.value,
-      profileImage: profileImage.value,
     };
-    
-    const message = await authStore.register(userData);
-    successMessage.value = message + " Şimdi giriş yapabilirsiniz.";
-    
-    // Başarılı kayıt sonrası formu temizle
-    name.value = '';
-    email.value = '';
-    password.value = '';
-    profileImage.value = null;
-
+    await authStore.register(userData);
+    successMessage.value = "Kayıt başarılı! Lütfen hesabınızı doğrulamak için e-postanızı kontrol edin.";
   } catch (err) {
-    error.value = err;
+    error.value = err.message || 'Bilinmeyen bir hata oluştu.';
   } finally {
     isLoading.value = false;
   }
@@ -62,11 +36,9 @@ async function handleRegister() {
     <div class="register-box">
       <h1 class="title">Yeni Hesap Oluştur</h1>
       <p class="subtitle">İK Portalı'na katılın.</p>
-      
       <form @submit.prevent="handleRegister">
         <div v-if="successMessage" class="success-banner">{{ successMessage }}</div>
         <div v-if="error" class="error-banner">{{ error }}</div>
-
         <div class="input-group">
           <label for="name">İsim Soyisim</label>
           <input type="text" id="name" v-model="name" required :disabled="isLoading">
@@ -79,17 +51,11 @@ async function handleRegister() {
           <label for="password">Şifre</label>
           <input type="password" id="password" v-model="password" required :disabled="isLoading">
         </div>
-        <div class="input-group">
-          <label for="profileImage">Profil Resmi (İsteğe Bağlı)</label>
-          <input type="file" id="profileImage" @change="onFileChange" accept="image/png, image/jpeg" :disabled="isLoading">
-        </div>
-        
         <button type="submit" class="register-button" :disabled="isLoading">
           <span v-if="!isLoading">Kayıt Ol</span>
           <span v-else>Kaydediliyor...</span>
         </button>
       </form>
-      
       <div class="extra-links">
         <router-link to="/login" class="link">Zaten bir hesabınız var mı? Giriş yapın</router-link>
       </div>

@@ -1,22 +1,29 @@
+<!-- src/views/ResetPasswordView.vue (Nihai Versiyon) -->
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
+import { supabase } from '../services/supabaseClient';
 
-const route = useRoute();
 const authStore = useAuthStore();
+const router = useRouter();
 
-const token = ref(null);
 const password = ref('');
 const passwordConfirm = ref('');
 
 const isLoading = ref(false);
 const error = ref(null);
 const successMessage = ref(null);
+const isSessionReady = ref(false); // Yeni durum: Oturum hazır mı?
 
-// Sayfa ilk yüklendiğinde, URL'den sıfırlama token'ını al.
+// Sayfa ilk yüklendiğinde, Supabase'in 'PASSWORD_RECOVERY' olayını dinle.
 onMounted(() => {
-  token.value = route.params.token;
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      console.log("Şifre sıfırlama oturumu başarıyla algılandı!");
+      isSessionReady.value = true; // Oturum hazır, artık formu gösterebiliriz.
+    }
+  });
 });
 
 async function handleResetPassword() {
@@ -31,8 +38,14 @@ async function handleResetPassword() {
   }
 
   try {
-    const message = await authStore.resetPassword(token.value, password.value, passwordConfirm.value);
-    successMessage.value = message;
+    const result = await authStore.resetPassword(password.value);
+    successMessage.value = result.message;
+
+    // Başarılı olduktan 3 saniye sonra kullanıcıyı login'e yönlendir.
+    setTimeout(() => {
+        router.push('/login');
+    }, 3000);
+
   } catch (err) {
     error.value = err;
   } finally {
@@ -45,27 +58,34 @@ async function handleResetPassword() {
   <div class="form-container">
     <div class="form-box">
       <h1 class="title">Yeni Şifre Belirle</h1>
-      <p class="subtitle">Lütfen yeni şifrenizi girin.</p>
       
-      <form @submit.prevent="handleResetPassword">
-        <div v-if="successMessage" class="success-banner">{{ successMessage }}</div>
-        <div v-if="error" class="error-banner">{{ error }}</div>
-
-        <div v-if="!successMessage">
-          <div class="input-group">
-            <label for="password">Yeni Şifre</label>
-            <input type="password" id="password" v-model="password" required :disabled="isLoading">
+      <!-- Sadece oturum hazır olduğunda formu göster -->
+      <div v-if="isSessionReady">
+        <p class="subtitle">Lütfen yeni şifrenizi girin.</p>
+        <form @submit.prevent="handleResetPassword">
+          <div v-if="successMessage" class="success-banner">{{ successMessage }}</div>
+          <div v-if="error" class="error-banner">{{ error }}</div>
+          <div v-if="!successMessage">
+            <div class="input-group">
+              <label for="password">Yeni Şifre</label>
+              <input type="password" id="password" v-model="password" required :disabled="isLoading">
+            </div>
+            <div class="input-group">
+              <label for="passwordConfirm">Yeni Şifre (Tekrar)</label>
+              <input type="password" id="passwordConfirm" v-model="passwordConfirm" required :disabled="isLoading">
+            </div>
+            <button type="submit" class="submit-button" :disabled="isLoading">
+              <span v-if="!isLoading">Şifreyi Sıfırla</span>
+              <span v-else>Sıfırlanıyor...</span>
+            </button>
           </div>
-          <div class="input-group">
-            <label for="passwordConfirm">Yeni Şifre (Tekrar)</label>
-            <input type="password" id="passwordConfirm" v-model="passwordConfirm" required :disabled="isLoading">
-          </div>
-          <button type="submit" class="submit-button" :disabled="isLoading">
-            <span v-if="!isLoading">Şifreyi Sıfırla</span>
-            <span v-else>Sıfırlanıyor...</span>
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
+      
+      <!-- Oturum beklenirken veya bir hata varsa bunu göster -->
+      <div v-else>
+        <p class="subtitle">Oturum bilgileri yükleniyor...</p>
+      </div>
       
       <div v-if="successMessage" class="extra-links">
         <router-link to="/login" class="link">Giriş ekranına geri dön</router-link>

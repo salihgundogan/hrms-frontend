@@ -8,16 +8,15 @@ import MainLayout from '../layouts/MainLayout.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import VerifyEmailView from '../views/VerifyEmailView.vue';
-import ForgotPasswordView from '../views/ForgotPasswordView.vue'; // <-- Yeni import
-import ResetPasswordView from '../views/ResetPasswordView.vue';   // <-- Yeni import
+import ForgotPasswordView from '../views/ForgotPasswordView.vue';
+import ResetPasswordView from '../views/ResetPasswordView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import TeamView from '../views/TeamView.vue';
 import LeaveManagementView from '../views/LeaveManagementView.vue';
 
-
 const routes = [
-    // 1. Rota Grubu: Layout'un DIŞINDA kalan, halka açık sayfalar
+    // 1. Rota Grubu: Layout'un DIŞINDA kalan, HERKESE AÇIK sayfalar
     { 
         path: '/login', 
         name: 'Login', 
@@ -33,24 +32,22 @@ const routes = [
         name: 'VerifyEmail', 
         component: VerifyEmailView
     },
-    // --- YENİ EKLENEN ŞİFRE SIFIRLAMA ROTALARI ---
     {
         path: '/forgot-password',
         name: 'ForgotPassword',
         component: ForgotPasswordView
     },
     {
-        path: '/reset-password/:token',
+        path: '/reset-password', // DÜZELTME: Supabase token'ı URL'de değil, hash'te (#) gönderir.
         name: 'ResetPassword',
         component: ResetPasswordView
     },
-    // --------------------------------------------
 
-    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, giriş gerektiren sayfalar
+    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, GİRİŞ GEREKTİREN sayfalar
     {
         path: '/',
         component: MainLayout,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true }, // Bu kural, aşağıdaki tüm 'children' için geçerlidir.
         children: [
             { path: '', redirect: '/dashboard' }, 
             { path: 'dashboard', name: 'Dashboard', component: DashboardView },
@@ -75,20 +72,29 @@ const router = createRouter({
     routes,
 });
 
-// Navigation Guard (Kimlik ve Yetki Kontrolü) - Bu kısım aynı kalıyor.
+// Navigation Guard (Kimlik ve Yetki Kontrolü)
 router.beforeEach((to, from, next) => {
     const authStore = useAuthStore();
-    const {isAuthenticated} = authStore;
+    const isAuthenticated = authStore.isAuthenticated;
 
-    if ((to.name === 'Login' || to.name === 'Register') && isAuthenticated) {
+    // Giriş yapmış bir kullanıcı, halka açık sayfalara (login, register vb.) gitmeye çalışırsa,
+    // onu doğrudan dashboard'a yönlendir.
+    const publicPages = ['/login', '/register', '/forgot-password'];
+    if (publicPages.includes(to.path) && isAuthenticated) {
         return next({ name: 'Dashboard' });
     }
+
+    // Giriş gerektiren bir sayfaya, giriş yapmamış bir kullanıcı erişmeye çalışırsa...
     if (to.meta.requiresAuth && !isAuthenticated) {
         return next('/login');
     }
+
+    // Belirli bir rol gerektiren bir sayfaya, yetkisiz bir kullanıcı erişmeye çalışırsa...
     if (to.meta.roles && authStore.userRole && !to.meta.roles.includes(authStore.userRole)) {
         return next('/dashboard');
     }
+
+    // Her şey yolundaysa, devam et.
     next();
 });
 
