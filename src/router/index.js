@@ -15,8 +15,9 @@ import ProfileView from '../views/ProfileView.vue';
 import TeamView from '../views/TeamView.vue';
 import LeaveManagementView from '../views/LeaveManagementView.vue';
 
+
 const routes = [
-    // 1. Rota Grubu: Layout'un DIŞINDA kalan, HERKESE AÇIK sayfalar
+    // 1. Rota Grubu: Layout'un DIŞINDA kalan, halka açık sayfalar
     { 
         path: '/login', 
         name: 'Login', 
@@ -38,16 +39,16 @@ const routes = [
         component: ForgotPasswordView
     },
     {
-        path: '/reset-password', // DÜZELTME: Supabase token'ı URL'de değil, hash'te (#) gönderir.
+        path: '/reset-password',
         name: 'ResetPassword',
         component: ResetPasswordView
     },
 
-    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, GİRİŞ GEREKTİREN sayfalar
+    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, giriş gerektiren sayfalar
     {
         path: '/',
         component: MainLayout,
-        meta: { requiresAuth: true }, // Bu kural, aşağıdaki tüm 'children' için geçerlidir.
+        meta: { requiresAuth: true },
         children: [
             { path: '', redirect: '/dashboard' }, 
             { path: 'dashboard', name: 'Dashboard', component: DashboardView },
@@ -60,10 +61,7 @@ const routes = [
     // Bulunmayan sayfaları yönlendirme kuralı
     { 
         path: '/:pathMatch(.*)*', 
-        redirect: () => {
-            const authStore = useAuthStore();
-            return authStore.isAuthenticated ? '/dashboard' : '/login';
-        }
+        redirect: '/login' // Giriş yapmamış birini her zaman login'e yönlendir
     }
 ];
 
@@ -72,29 +70,36 @@ const router = createRouter({
     routes,
 });
 
-// Navigation Guard (Kimlik ve Yetki Kontrolü)
-router.beforeEach((to, from, next) => {
+// Navigation Guard (Nihai ve Doğru Versiyon)
+router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
-    const isAuthenticated = authStore.isAuthenticated;
 
-    // Giriş yapmış bir kullanıcı, halka açık sayfalara (login, register vb.) gitmeye çalışırsa,
-    // onu doğrudan dashboard'a yönlendir.
-    const publicPages = ['/login', '/register', '/forgot-password'];
-    if (publicPages.includes(to.path) && isAuthenticated) {
+    // Oturum bilgisinin Supabase'den çekilmesini bekle
+    if (!authStore.isAuthReady) {
+        await authStore.initialize();
+    }
+
+    const isAuthenticated = authStore.isAuthenticated;
+    
+    const publicPages = ['Login', 'Register', 'ForgotPassword', 'ResetPassword', 'VerifyEmail'];
+    const authRequired = !publicPages.includes(to.name);
+
+    // SENARYO 1: Korumalı bir sayfaya, giriş yapmadan girmeye çalışıyorsa -> Login'e gönder
+    if (authRequired && !isAuthenticated) {
+        return next({ name: 'Login' });
+    }
+
+    // SENARYO 2: Halka açık bir sayfaya (Login gibi), zaten giriş yapmışken gitmeye çalışıyorsa -> Dashboard'a gönder
+    if (!authRequired && isAuthenticated) {
         return next({ name: 'Dashboard' });
     }
 
-    // Giriş gerektiren bir sayfaya, giriş yapmamış bir kullanıcı erişmeye çalışırsa...
-    if (to.meta.requiresAuth && !isAuthenticated) {
-        return next('/login');
+    // SENARYO 3: Rol bazlı bir sayfaya, yetkisiz bir roldeyken girmeye çalışıyorsa -> Dashboard'a gönder
+    if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
+        return next({ name: 'Dashboard' });
     }
-
-    // Belirli bir rol gerektiren bir sayfaya, yetkisiz bir kullanıcı erişmeye çalışırsa...
-    if (to.meta.roles && authStore.userRole && !to.meta.roles.includes(authStore.userRole)) {
-        return next('/dashboard');
-    }
-
-    // Her şey yolundaysa, devam et.
+    
+    // Eğer yukarıdaki kurallardan hiçbiri geçerli değilse, gitmek istediği yere gitmesine izin ver.
     next();
 });
 
