@@ -43,10 +43,43 @@ export const useAuthStore = defineStore('auth', {
             return data;
         },
         async login(email, password) {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            router.push('/dashboard');
-        },
+    try {
+        // 1. Supabase'e normal giriş isteğini gönder.
+        const { data: sessionData, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+        if (error) throw error;
+
+        // 2. GÜVENLİK KONTROLÜ: Giriş başarılıysa, şimdi profilini kontrol et.
+        if (sessionData.user) {
+            // Kullanıcının bizim public.Users tablomuzdaki profilini çek.
+            const { data: profile, error: profileError } = await supabase
+                .from('Users')
+                .select('isVerified') // Sadece 'isVerified' alanına ihtiyacımız var
+                .eq('id', sessionData.user.id)
+                .single();
+
+            if (profileError) throw profileError;
+
+            // Eğer profil bulunamazsa veya 'isVerified' false ise...
+            if (!profile || !profile.isVerified) {
+                // ...kullanıcıyı hemen çıkış yaptır ve bir hata fırlat.
+                await supabase.auth.signOut();
+                throw new Error('Giriş yapılamadı. Lütfen hesabınızı doğrulamak için e-postanızı kontrol edin.');
+            }
+        }
+        
+        // Eğer tüm kontrollerden geçtiyse, yönlendirmeyi yap.
+        // onAuthStateChange dinleyicisi zaten geri kalanı halledecektir.
+        router.push('/dashboard');
+
+    } catch (error) {
+        console.error("Giriş başarısız:", error);
+        // Hatayı, arayüzde göstermek için geri fırlatıyoruz.
+        throw error;
+    }
+},
         async logout() {
             const { error } = await supabase.auth.signOut();
             if (error) console.error('Logout error:', error);
