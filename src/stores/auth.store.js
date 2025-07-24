@@ -2,7 +2,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { supabase } from '../supabase'; // Supabase client'ınızın doğru yolda olduğundan emin olun
+import { supabase } from '../services/supabaseClient.js'; // Supabase client'ınızın doğru yolda olduğundan emin olun
 import router from '../router'; // Router'ı import ediyoruz
 
 export const useAuthStore = defineStore('auth', () => {
