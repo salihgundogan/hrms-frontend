@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth.store';
 
 const authStore = useAuthStore();
 const isSidebarExpanded = ref(false);
+
 </script>
 
 <template>
