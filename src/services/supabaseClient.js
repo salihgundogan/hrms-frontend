@@ -10,4 +10,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 // Supabase istemcisini (client) oluştur ve dışarıya aç.
 // Bu, bizim yeni "singleton instance"ımız olacak.
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
