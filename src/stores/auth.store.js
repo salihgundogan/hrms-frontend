@@ -111,7 +111,7 @@ export const useAuthStore = defineStore('auth', {
     async forgotPassword(email) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         // DÜZELTME: Yönlendirilecek adresi doğru şekilde belirtiyoruz.
-        redirectTo: 'http://localhost:5173/reset-password',
+        redirectTo: '${import.meta.env.VITE_SITE_URL}/reset-password',
       });
       if (error) {
         console.error('Şifre sıfırlama hatası:', error);
