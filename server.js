@@ -1,22 +1,25 @@
-// server.js (Modern ES Module Syntax)
+// server.js (En Sağlam ve Esnek Versiyon)
 
 import express from 'express';
-import path from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
 const port = process.env.PORT || 8080;
 
-// ES Modüllerinde __dirname'i bu şekilde alırız
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Sunucu dosyasının tam yolunu bul
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
-// Derlenmiş 'dist' klasörünü sun
-app.use(express.static(path.join(__dirname, 'dist')));
+// 'dist' klasörünün tam yolunu oluştur
+const distDir = join(currentDir, 'dist');
 
-// Tüm istekleri index.html'e yönlendir (Vue Router'ın çalışması için)
+// Derlenmiş 'dist' klasörünü statik olarak sun
+app.use(express.static(distDir));
+
+// Diğer tüm istekleri 'dist' içindeki 'index.html'e yönlendir
+// Bu, Vue Router'ın çalışması için gereklidir
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(join(distDir, 'index.html'));
 });
 
 app.listen(port, () => {
