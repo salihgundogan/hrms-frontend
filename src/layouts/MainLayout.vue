@@ -1,23 +1,34 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'; // ref'i import ettiğinizden emin olun
 import { useAuthStore } from '../stores/auth.store';
+import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
-const isSidebarExpanded = ref(false);
+const router = useRouter();
+
+// EKSİK OLAN KISIM BURASIYDI
+const isSidebarExpanded = ref(true); // Kenar çubuğunun başlangıç durumunu belirler (true = açık)
+
+// Kenar çubuğunu açıp kapatacak fonksiyon
+function toggleSidebar() {
+  isSidebarExpanded.value = !isSidebarExpanded.value;
+}
+// ===================================
+
+async function handleLogout() {
+  await authStore.logout();
+  router.push({ name: 'login' });
+}
 </script>
 
 <template>
   <div class="main-layout">
-    <aside 
-      class="sidebar" 
-      :class="{ 'expanded': isSidebarExpanded }"
-      @mouseenter="isSidebarExpanded = true"
-      @mouseleave="isSidebarExpanded = false"
-    >
+    <aside class="sidebar" :class="{ 'expanded': isSidebarExpanded }" @mouseenter="isSidebarExpanded = true"
+      @mouseleave="isSidebarExpanded = false">
       <br><br><br>
       <br><br><br>
       <br><br><br>
-      
+
       <nav class="nav-menu">
         <router-link to="/dashboard" class="nav-item">
           <span class="icon">🏠</span>
@@ -29,7 +40,8 @@ const isSidebarExpanded = ref(false);
           <span v-if="isSidebarExpanded" class="text">Profilim</span>
         </router-link>
 
-        <router-link v-if="authStore.userRole === 'manager' || authStore.userRole === 'hr_admin'" to="/team" class="nav-item">
+        <router-link v-if="authStore.userRole === 'manager' || authStore.userRole === 'hr_admin'" to="/team"
+          class="nav-item">
           <span class="icon">👥</span>
           <span v-if="isSidebarExpanded" class="text">Ekip</span>
         </router-link>
@@ -43,24 +55,26 @@ const isSidebarExpanded = ref(false);
       <!-- DÜZELTME: Sidebar Footer geri eklendi -->
       <div class="sidebar-footer">
         <div v-if="authStore.user" class="user-info">
-            <img v-if="authStore.user.profilePicture" :src="`http://localhost:5001${authStore.user.profilePicture}`" alt="Profil Resmi" class="avatar">
-            <div v-if="isSidebarExpanded" class="user-details">
-                <span class="user-name">{{ authStore.user.name }}</span>
-                <span class="user-role">{{ authStore.user.role }}</span>
-            </div>
+          <img v-if="authStore.user.profilePicture" :src="`http://localhost:5001${authStore.user.profilePicture}`"
+            alt="Profil Resmi" class="avatar">
+
+          <div v-if="isSidebarExpanded" class="user-details">
+            <span class="user-name">{{ authStore.user.name }}</span>
+            <span class="user-role">{{ authStore.user.role }}</span>
+          </div>
         </div>
-        <button @click="authStore.logout" class="nav-item logout-button">
-          <span class="icon">🚪</span>
-          <span v-if="isSidebarExpanded" class="text">Çıkış Yap</span>
+
+        <button @click="handleLogout" class="nav-item logout-button">
+          <span class="icon">🚪</span> <span v-if="isSidebarExpanded" class="text">Çıkış Yap</span>
         </button>
       </div>
     </aside>
 
     <!-- DÜZELTME: Ana içerik alanından header kaldırıldı -->
     <main class="content">
-        <div class="page-content">
-            <router-view />
-        </div>
+      <div class="page-content">
+        <router-view />
+      </div>
     </main>
   </div>
 </template>
@@ -102,24 +116,24 @@ const isSidebarExpanded = ref(false);
 }
 
 .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo-icon {
-    font-weight: bold;
-    font-size: 28px;
-    background-color: #eef2ff;
-    color: #4338ca;
-    border-radius: 12px;
-    padding: 8px 12px;
-    transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 28px;
+  background-color: #eef2ff;
+  color: #4338ca;
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: all 0.3s ease;
 }
 
 .sidebar.expanded .logo-icon {
-    background-color: transparent;
-    color: #312e81;
+  background-color: transparent;
+  color: #312e81;
 }
 
 .logo-text {
@@ -162,59 +176,60 @@ const isSidebarExpanded = ref(false);
 }
 
 .router-link-exact-active {
-    background-color: #4338ca;
-    color: white;
+  background-color: #4338ca;
+  color: white;
 }
 
 /* DÜZELTME: Sidebar Footer stilleri geri eklendi */
 .sidebar-footer {
-    padding: 20px 10px;
-    border-top: 1px solid #e5e7eb;
+  padding: 20px 10px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .user-info {
-    display: flex;
-    align-items: center;
-    padding: 0 15px;
-    margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  margin-bottom: 15px;
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #e5e7eb;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
 }
 
 .user-details {
-    margin-left: 10px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  margin-left: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .user-name {
-    color: #1f2937;
-    font-weight: 600;
-    white-space: nowrap;
+  color: #1f2937;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .user-role {
-    font-size: 12px;
-    color: #6b7280;
-    text-transform: capitalize;
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: capitalize;
 }
 
 .logout-button {
-    width: 100%;
-    background: none;
-    border: none;
-    cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
+
 .logout-button:hover {
-    background-color: #fee2e2;
-    color: #b91c1c;
+  background-color: #fee2e2;
+  color: #b91c1c;
 }
 
 .content {
@@ -223,12 +238,12 @@ const isSidebarExpanded = ref(false);
   transition: margin-left 0.3s ease;
 }
 
-.sidebar.expanded ~ .content {
+.sidebar.expanded~.content {
   margin-left: 260px;
 }
 
 /* DÜZELTME: Header kaldırıldığı için, padding artık page-content'te */
 .page-content {
-    padding: 40px;
+  padding: 40px;
 }
 </style>

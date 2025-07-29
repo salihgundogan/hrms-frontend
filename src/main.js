@@ -1,16 +1,21 @@
-// src/main.js
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from './router'
-import { useAuthStore } from './stores/auth.store'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import router from './router';
+import { useAuthStore } from './stores/auth.store';
+import './style.css'; // veya main.css
 
-const app = createApp(App)
-app.use(createPinia())
+// Uygulamayı asenkron bir fonksiyon içinde başlatalım
+async function startApp() {
+  const app = createApp(App);
+  app.use(createPinia());
 
-// Auth store'u çağır ve oturum dinleyicisini BAŞLAT.
-const authStore = useAuthStore();
-authStore.initialize();
+  // ÖNEMLİ: Auth store'u çağır ve ilk kontrolü yap
+  const authStore = useAuthStore();
+  await authStore.initialize();
 
-app.use(router)
-app.mount('#app')
+  app.use(router);
+  app.mount('#app');
+}
+
+startApp();

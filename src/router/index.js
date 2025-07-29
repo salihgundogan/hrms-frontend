@@ -15,22 +15,20 @@ import ProfileView from '../views/ProfileView.vue';
 import TeamView from '../views/TeamView.vue';
 import LeaveManagementView from '../views/LeaveManagementView.vue';
 
-
 const routes = [
-    // 1. Rota Grubu: Layout'un DIŞINDA kalan, halka açık sayfalar
-    { 
-        path: '/login', 
-        name: 'Login', 
-        component: LoginView 
+    {
+        path: '/login',
+        name: 'login',
+        component: LoginView
     },
-    { 
-        path: '/register', 
-        name: 'Register', 
+    {
+        path: '/register',
+        name: 'register',
         component: RegisterView
     },
-    { 
-        path: '/verify-email/:token', 
-        name: 'VerifyEmail', 
+    {
+        path: '/verify-email/:token',
+        name: 'VerifyEmail',
         component: VerifyEmailView
     },
     {
@@ -43,64 +41,56 @@ const routes = [
         name: 'ResetPassword',
         component: ResetPasswordView
     },
-
-    // 2. Rota Grubu: MainLayout'un İÇİNDE gösterilecek olan, giriş gerektiren sayfalar
     {
         path: '/',
         component: MainLayout,
         meta: { requiresAuth: true },
         children: [
-            { path: '', redirect: '/dashboard' }, 
+            // Kök dizine gelen isteği doğrudan dashboard'a yönlendir
+            { path: '', redirect: '/dashboard' },
             { path: 'dashboard', name: 'Dashboard', component: DashboardView },
             { path: 'profile', name: 'Profile', component: ProfileView },
             { path: 'team', name: 'Team', component: TeamView, meta: { roles: ['manager', 'hr_admin'] } },
             { path: 'admin/leaves', name: 'LeaveManagement', component: LeaveManagementView, meta: { roles: ['hr_admin'] } },
         ]
     },
-    
-    // Bulunmayan sayfaları yönlendirme kuralı
-    { 
-        path: '/:pathMatch(.*)*', 
-        redirect: '/login' // Giriş yapmamış birini her zaman login'e yönlendir
+
+    // 3. Bulunmayan Sayfalar (404)
+    // Bu kural en sonda olmalı
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        redirect: to => {
+            const authStore = useAuthStore();
+            // Eğer kullanıcı giriş yapmışsa dashboard'a, yapmamışsa login'e yönlendir.
+            return authStore.user ? { name: 'Dashboard' } : { name: 'login' };
+        }
     }
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+  const isLoggedIn = !!authStore.user;
+
+  // main.js'deki ilk kontrolün bitmesini beklemeye gerek yok, çünkü o zaten bitti.
+  // Artık sadece store'daki mevcut duruma göre karar veriyoruz.
+
+  // Kural 1: Kullanıcı GİRİŞ YAPMAMIŞ ve yetki gerektiren bir sayfaya gitmek istiyorsa
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    return next({ name: 'login' });
+  }
+
+  // Kural 2: Kullanıcı GİRİŞ YAPMIŞ ve login/register gibi halka açık bir sayfaya gitmek istiyorsa
+  if (['login', 'register', 'ForgotPassword', 'ResetPassword'].includes(to.name) && isLoggedIn) {
+    return next({ name: 'Dashboard' }); // Ana sayfasına yönlendir
+  }
+  
+  // Diğer tüm durumlarda serbest geçiş ver.
+  next();
 });
-
-// Navigation Guard (Nihai ve Doğru Versiyon)
-router.beforeEach(async (to, from, next) => {
-    const authStore = useAuthStore();
-
-    // Oturum bilgisinin Supabase'den çekilmesini bekle
-    if (!authStore.isAuthReady) {
-        await authStore.initialize();
-    }
-
-    const isAuthenticated = authStore.isAuthenticated;
-    
-    const publicPages = ['Login', 'Register', 'ForgotPassword', 'ResetPassword', 'VerifyEmail'];
-    const authRequired = !publicPages.includes(to.name);
-
-    // SENARYO 1: Korumalı bir sayfaya, giriş yapmadan girmeye çalışıyorsa -> Login'e gönder
-    if (authRequired && !isAuthenticated) {
-        return next({ name: 'Login' });
-    }
-
-    // SENARYO 2: Halka açık bir sayfaya (Login gibi), zaten giriş yapmışken gitmeye çalışıyorsa -> Dashboard'a gönder
-    if (!authRequired && isAuthenticated) {
-        return next({ name: 'Dashboard' });
-    }
-
-    // SENARYO 3: Rol bazlı bir sayfaya, yetkisiz bir roldeyken girmeye çalışıyorsa -> Dashboard'a gönder
-    if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
-        return next({ name: 'Dashboard' });
-    }
-    
-    // Eğer yukarıdaki kurallardan hiçbiri geçerli değilse, gitmek istediği yere gitmesine izin ver.
-    next();
-});
-
 export default router;
