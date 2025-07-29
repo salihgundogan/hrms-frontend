@@ -16,6 +16,7 @@ import TeamView from '../views/TeamView.vue';
 import LeaveManagementView from '../views/LeaveManagementView.vue';
 
 const routes = [
+    // 1. Grup: Herkese açık sayfalar
     {
         path: '/login',
         name: 'login',
@@ -37,14 +38,17 @@ const routes = [
         component: ForgotPasswordView
     },
     {
+        // Şifre sıfırlama sayfası da bu grupta olmalı
         path: '/reset-password',
         name: 'ResetPassword',
         component: ResetPasswordView
     },
+
+    // 2. Grup: Giriş gerektiren, ana layout içindeki sayfalar
     {
         path: '/',
         component: MainLayout,
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true }, // Bu gruptaki tüm sayfalar giriş gerektirir
         children: [
             // Kök dizine gelen isteği doğrudan dashboard'a yönlendir
             { path: '', redirect: '/dashboard' },
@@ -55,14 +59,13 @@ const routes = [
         ]
     },
 
-    // 3. Bulunmayan Sayfalar (404)
-    // Bu kural en sonda olmalı
+    // 3. Grup: Bulunmayan sayfalar (404) - Her zaman en sonda olmalı
     {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
-        redirect: to => {
+        redirect: () => {
             const authStore = useAuthStore();
-            // Eğer kullanıcı giriş yapmışsa dashboard'a, yapmamışsa login'e yönlendir.
+            // Kullanıcı giriş yapmışsa dashboard'a, yapmamışsa login'e yönlendir.
             return authStore.user ? { name: 'Dashboard' } : { name: 'login' };
         }
     }
@@ -73,24 +76,24 @@ const router = createRouter({
     routes
 })
 
+// NİHAİ VE DOĞRU YÖNLENDİRME KONTROLÜ (Navigation Guard)
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-  const isLoggedIn = !!authStore.user;
+    const authStore = useAuthStore();
+    const isLoggedIn = !!authStore.user;
 
-  // main.js'deki ilk kontrolün bitmesini beklemeye gerek yok, çünkü o zaten bitti.
-  // Artık sadece store'daki mevcut duruma göre karar veriyoruz.
+    // Kural 1: Kullanıcı GİRİŞ YAPMAMIŞ ve yetki gerektiren bir sayfaya gitmek istiyorsa
+    if (to.meta.requiresAuth && !isLoggedIn) {
+        return next({ name: 'login' });
+    }
 
-  // Kural 1: Kullanıcı GİRİŞ YAPMAMIŞ ve yetki gerektiren bir sayfaya gitmek istiyorsa
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    return next({ name: 'login' });
-  }
+    // Kural 2: Kullanıcı GİRİŞ YAPMIŞ ve login, register gibi sayfalara gitmek istiyorsa
+    // DÜZELTME: Bu listeden 'ResetPassword' çıkarıldı.
+    if (['login', 'register', 'ForgotPassword'].includes(to.name) && isLoggedIn) {
+        return next({ name: 'Dashboard' }); // Onu ana sayfasına yönlendir
+    }
 
-  // Kural 2: Kullanıcı GİRİŞ YAPMIŞ ve login/register gibi halka açık bir sayfaya gitmek istiyorsa
-  if (['login', 'register', 'ForgotPassword', 'ResetPassword'].includes(to.name) && isLoggedIn) {
-    return next({ name: 'Dashboard' }); // Ana sayfasına yönlendir
-  }
-  
-  // Diğer tüm durumlarda serbest geçiş ver.
-  next();
+    // Diğer tüm durumlarda serbest geçiş ver.
+    next();
 });
+
 export default router;

@@ -2,34 +2,32 @@ import { defineStore } from 'pinia';
 import { supabase } from '@/services/supabaseClient';
 
 export const useAuthStore = defineStore('auth', {
+  // Başlangıç durumu: Kullanıcı yok, ve uygulama "yükleniyor" modunda.
   state: () => ({
-    user: null, // Bu, hem kimlik hem de profil verisini tutacak
-    loading: true, // Bu, SADECE uygulamanın ilk açılışındaki kontrol içindir
+    user: null,
+    loading: true,
   }),
   actions: {
+    // UYGULAMANIN İLK AÇILIŞINDA ÇALIŞACAK TEK VE EN ÖNEMLİ FONKSİYON
     async initialize() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Standart .select() sorgusunu kullanıyoruz.
-        const { data: profile, error } = await supabase
-          .from('users') // Küçük harfle, Supabase'in hint'ine uyarak.
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error || !profile) {
-          console.error("İlk oturum kontrolünde profil bulunamadı. Hata:", error);
-          await this.logout(); // Bozuk oturumu temizle
-        } else {
-          this.user = { ...session.user, ...profile };
-        }
+      try {
+        // Supabase'den mevcut oturum bilgisini al.
+        const { data: { session } } = await supabase.auth.getSession();
+        // Oturum varsa kullanıcıyı ata, yoksa null olarak bırak.
+        this.user = session?.user ?? null;
+      } catch (error) {
+        console.error("Oturum kontrolü sırasında hata oluştu:", error);
+        this.user = null;
+      } finally {
+        // NE OLURSA OLSUN, İŞLEM BİTTİĞİNDE "YÜKLENİYOR" DURUMUNU BİTİR.
+        // Takılı kalmayı engelleyen en kritik satır budur.
+        this.loading = false;
       }
-      this.loading = false;
     },
 
     async login(credentials) {
       const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword(credentials);
-      if (loginError) throw loginError;
+      if (loginError) { throw loginError };
 
       if (loginData.user) {
         const { data: profile, error: profileError } = await supabase
@@ -63,8 +61,6 @@ export const useAuthStore = defineStore('auth', {
       this.loading = false;
     },
     async register(userInfo) {
-      // userInfo objesi şunları içermeli: { name, email, password }
-
       const { data, error } = await supabase.auth.signUp({
         email: userInfo.email,
         password: userInfo.password,
@@ -117,29 +113,21 @@ export const useAuthStore = defineStore('auth', {
         // DÜZELTME: Yönlendirilecek adresi doğru şekilde belirtiyoruz.
         redirectTo: 'http://localhost:5173/reset-password',
       });
-
       if (error) {
         console.error('Şifre sıfırlama hatası:', error);
         throw error;
       }
-
       return 'Şifre sıfırlama e-postası gönderildi. Lütfen gelen kutunuzu kontrol edin.';
     },
     async resetPassword(newPassword) {
-      // Supabase, kullanıcının e-postadaki linke tıkladığında
-      // tarayıcıya özel bir kod bırakır. auth.updateUser metodu,
-      // bu kodu otomatik olarak kullanarak doğru kullanıcıyı bulur ve şifresini günceller.
       const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) {
-        // Bir hata olursa (örn: yeni şifre çok kısa), bunu fırlatalım.
         console.error('Yeni şifre belirleme hatası:', error);
         throw error;
       }
-
-      // Başarılı olduğunda kullanıcıya bilgi verelim.
       console.log('Şifre başarıyla sıfırlandı:', data);
       return 'Şifreniz başarıyla güncellendi. Artık yeni şifrenizle giriş yapabilirsiniz.';
     },
