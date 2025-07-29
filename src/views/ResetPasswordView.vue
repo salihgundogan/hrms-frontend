@@ -1,9 +1,7 @@
-<!-- src/views/ResetPasswordView.vue (Nihai Versiyon) -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
-import { supabase } from '../services/supabaseClient';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -12,15 +10,10 @@ const passwordConfirm = ref('');
 const isLoading = ref(false);
 const error = ref(null);
 const successMessage = ref(null);
-const isSessionReady = ref(false);
 
-onMounted(() => {
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      isSessionReady.value = true;
-    }
-  });
-});
+// ARTIK onMounted VE onAuthStateChange KULLANMIYORUZ.
+// Çünkü App.vue'nin yükleme ekranı, bu sayfanın sadece oturum hazır
+// olduğunda gösterilmesini zaten garanti ediyor.
 
 async function handleResetPassword() {
   error.value = null;
@@ -32,13 +25,15 @@ async function handleResetPassword() {
     return;
   }
   try {
-    const result = await authStore.resetPassword(password.value);
-    successMessage.value = result.message;
+    // auth.store.js'deki fonksiyonu çağırıyoruz.
+    const message = await authStore.resetPassword(password.value);
+    successMessage.value = message; // Dönen başarı mesajını göster.
     setTimeout(() => {
-        router.push('/login');
-    }, 3000);
+      // Başarılı olduktan sonra kullanıcıyı login'e yönlendir.
+      router.push({ name: 'login' });
+    }, 3000); // 3 saniye sonra.
   } catch (err) {
-    error.value = err;
+    error.value = err.message || 'Bir hata oluştu.';
   } finally {
     isLoading.value = false;
   }
@@ -50,8 +45,7 @@ async function handleResetPassword() {
     <div class="form-box">
       <h1 class="title">Yeni Şifre Belirle</h1>
       
-      <!-- Sadece oturum hazır olduğunda formu göster -->
-      <div v-if="isSessionReady">
+      <div>
         <p class="subtitle">Lütfen yeni şifrenizi girin.</p>
         <form @submit.prevent="handleResetPassword">
           <div v-if="successMessage" class="success-banner">{{ successMessage }}</div>
@@ -71,11 +65,6 @@ async function handleResetPassword() {
             </button>
           </div>
         </form>
-      </div>
-      
-      <!-- Oturum beklenirken veya bir hata varsa bunu göster -->
-      <div v-else>
-        <p class="subtitle">Oturum bilgileri yükleniyor...</p>
       </div>
       
       <div v-if="successMessage" class="extra-links">

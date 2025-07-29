@@ -2,33 +2,64 @@
 
 import { defineStore } from 'pinia';
 import { supabase } from '@/services/supabaseClient';
+import { useAuthStore } from './auth.store'; // Auth store'u da kullanacağız
 
 export const useLeaveStore = defineStore('leave', {
   state: () => ({
     leaveRequests: [],
+    loading: false,
+    error: null,
   }),
   actions: {
-    // GÜNCELLENDİ: İzin taleplerini çek
-    // Supabase'de tanımlayacağımız Row Level Security (RLS) kuralları sayesinde
-    // bu tek fonksiyon her rol için doğru veriyi getirecektir.
+    // İzin taleplerini çeken fonksiyon
     async fetchLeaveRequests() {
-      // İlişkili tablodan da veri çekiyoruz: Users tablosundan isim ve email.
-      const { data, error } = await supabase
-        .from('LeaveRequests')
-        .select('*, employee:Users ( name, email )'); 
-        
-      if (error) throw error;
-      this.leaveRequests = data;
+      this.loading = true;
+      this.error = null;
+      try {
+        const { data, error } = await supabase
+          // DÜZELTME: Tablo adı küçük harfle yazıldı
+          .from('leaverequests')
+          // İlişkili tablodan da veri çekiyoruz: users tablosundan isim ve email.
+          .select('*, employee:users ( name, email )');
+
+        if (error) {throw error};
+        this.leaveRequests = data;
+      } catch (err) {
+        this.error = err.message;
+        console.error('İzin talepleri çekilirken hata:', err);
+      } finally {
+        this.loading = false;
+      }
     },
 
-    // GÜNCELLENDİ: Talep durumunu güncelle (Manager veya HR Admin için)
-    async updateRequestStatus(requestId, newStatus) {
+    // Yeni izin talebi oluşturma fonksiyonu
+    async createLeaveRequest(requestInfo) {
+      const authStore = useAuthStore();
+      if (!authStore.user) {throw new Error("İzin talebi oluşturmak için giriş yapmalısınız.")};
+
+      const newRequest = {
+        ...requestInfo,
+        employeeId: authStore.user.id // Giriş yapan kullanıcının ID'sini ekle
+      };
+
+      const { data, error } = await supabase
+        // DÜZELTME: Tablo adı küçük harfle yazıldı
+        .from('leaverequests')
+        .insert([newRequest])
+        .select();
+
+      if (error) {throw error};
+
+      // Yeni talebi lokal listeye de ekle
+      this.leaveRequests.push(data[0]);
+      return data[0];
+    }, async updateRequestStatus(requestId, newStatus) {
       const { data, error } = await supabase
         .from('LeaveRequests')
         .update({ status: newStatus })
         .eq('id', requestId);
-        
-      if (error) throw error;
+
+      if (error) {throw error};
       // Lokal state'i de güncelleyelim
       const index = this.leaveRequests.findIndex(req => req.id === requestId);
       if (index !== -1) {
@@ -36,17 +67,5 @@ export const useLeaveStore = defineStore('leave', {
       }
       return data;
     },
-    
-    // YENİ: Yeni izin talebi oluştur
-    async createLeaveRequest(requestInfo) {
-        const { data, error } = await supabase
-            .from('LeaveRequests')
-            .insert([requestInfo]); // requestInfo: { employeeId, startDate, endDate, reason }
-        
-        if (error) throw error;
-        // Yeni talebi lokal listeye ekle
-        this.leaveRequests.push(data[0]);
-        return data;
-    }
   },
 });
