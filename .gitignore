@@ -24,3 +24,4 @@ src/services/supabaseClient.js
 *.sln
 *.sw?
 
+.env
