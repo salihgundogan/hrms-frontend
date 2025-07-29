@@ -76,24 +76,29 @@ const router = createRouter({
     routes
 })
 
-// NİHAİ VE DOĞRU YÖNLENDİRME KONTROLÜ (Navigation Guard)
+// NİHAİ VE DOĞRU YÖNLENDİRME KONTROLÜ
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore();
-    const isLoggedIn = !!authStore.user;
+  const authStore = useAuthStore();
+  
+  // main.js'deki ilk kontrol bittiği için, store'daki durum nettir.
+  const isLoggedIn = !!authStore.user;
 
-    // Kural 1: Kullanıcı GİRİŞ YAPMAMIŞ ve yetki gerektiren bir sayfaya gitmek istiyorsa
-    if (to.meta.requiresAuth && !isLoggedIn) {
-        return next({ name: 'login' });
-    }
+  // Kural 1: GİRİŞ YAPMAMIŞ bir kullanıcı, yetki gerektiren bir sayfaya gitmek istiyorsa...
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    return next({ name: 'login' }); // Onu login'e gönder.
+  }
 
-    // Kural 2: Kullanıcı GİRİŞ YAPMIŞ ve login, register gibi sayfalara gitmek istiyorsa
-    // DÜZELTME: Bu listeden 'ResetPassword' çıkarıldı.
-    if (['login', 'register', 'ForgotPassword'].includes(to.name) && isLoggedIn) {
-        return next({ name: 'Dashboard' }); // Onu ana sayfasına yönlendir
-    }
-
-    // Diğer tüm durumlarda serbest geçiş ver.
-    next();
+  // Kural 2: GİRİŞ YAPMIŞ bir kullanıcı, halka açık sayfalara gitmek istiyorsa...
+  // DİKKAT: Bu kuralın 'ResetPassword' sayfasını ES GEÇMESİ gerekiyor.
+  const publicPages = ['login', 'register', 'ForgotPassword']; // ResetPassword bu listede YOK
+  if (publicPages.includes(to.name) && isLoggedIn) {
+    return next({ name: 'Dashboard' }); // Onu Dashboard'a gönder.
+  }
+  
+  // Diğer tüm durumlarda (giriş yapmış ve Dashboard'a gidiyor, 
+  // VEYA şifre sıfırlama linkinden gelip ResetPassword'e gidiyor), serbest geçiş ver.
+  next();
 });
+
 
 export default router;
