@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 // Supabase projenin URL'sini ve anon anahtarını buraya yapıştır.
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase URL ve Anon Key ortam değişkenlerinde bulunamadı!");
