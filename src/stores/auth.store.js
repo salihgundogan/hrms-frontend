@@ -109,14 +109,20 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async forgotPassword(email) {
+      // Canlı site adresini ortam değişkeninden alıyoruz.
+      const siteUrl = import.meta.env.VITE_SITE_URL;
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        // DÜZELTME: Yönlendirilecek adresi doğru şekilde belirtiyoruz.
-        redirectTo: 'https://hrms-frontend-3.onrender.com',
+        // NİHAİ DÜZELTME:
+        // Kullanıcıyı, canlı sitemizin içindeki /reset-password yoluna yönlendir.
+        redirectTo: `${siteUrl}/reset-password`,
       });
+
       if (error) {
         console.error('Şifre sıfırlama hatası:', error);
         throw error;
       }
+
       return 'Şifre sıfırlama e-postası gönderildi. Lütfen gelen kutunuzu kontrol edin.';
     },
     async resetPassword(newPassword) {
