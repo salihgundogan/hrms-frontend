@@ -7,13 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Bağımlılıklar
 node_modules
+
+# Derlenmiş dosyalar
 dist
 dist-ssr
-*.local
-src/services/supabaseClient.js
 
-# Editor directories and files
+# Editör dosyaları
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -24,4 +25,6 @@ src/services/supabaseClient.js
 *.sln
 *.sw?
 
+# Ortam değişkenleri (GİZLİ)
 .env
+*.local
