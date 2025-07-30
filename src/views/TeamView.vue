@@ -1,5 +1,3 @@
-<!-- src/views/TeamView.vue -->
-
 <script setup>
 import { onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/auth.store';
@@ -9,24 +7,28 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 
 onMounted(() => {
-  if (authStore.userRole === 'hr_admin') {
+  // DÜZELTME: Artık doğru değişken olan authStore.user.role'ü kullanıyoruz.
+  // Daha da iyisi, store'daki reaktif getter'ları (isHrAdmin, isManager) kullanalım.
+  if (authStore.isHrAdmin) {
     userStore.fetchAllUsers();
-  } else if (authStore.userRole === 'manager') {
+  } else if (authStore.isManager) {
     userStore.fetchMyTeam();
   }
 });
 
 const displayedUsers = computed(() => {
-  if (authStore.userRole === 'hr_admin') {
+  // DÜZELTME: Burada da getter'ları kullanıyoruz.
+  if (authStore.isHrAdmin) {
     return userStore.users;
-  } else if (authStore.userRole === 'manager') {
+  } else if (authStore.isManager) {
     return userStore.team;
   }
   return [];
 });
 
 const pageTitle = computed(() => {
-  return authStore.userRole === 'hr_admin' ? 'Tüm Çalışanlar' : 'Ekibim';
+  // DÜZELTME: Burada da getter'ları kullanıyoruz.
+  return authStore.isHrAdmin ? 'Tüm Çalışanlar' : 'Ekibim';
 });
 </script>
 
