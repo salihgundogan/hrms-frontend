@@ -31,12 +31,12 @@ async function handleLogout() {
           <span v-if="isSidebarExpanded" class="text">Profilim</span>
         </router-link>
 
-        <router-link v-if="authStore.user?.role === 'manager' || authStore.user?.role === 'hr_admin'" to="/team" class="nav-item">
+        <router-link v-if="authStore.isManagerOrHr === 'manager' || authStore.user?.role === 'hr_admin'" to="/team" class="nav-item">
           <span class="icon">👥</span>
           <span v-if="isSidebarExpanded" class="text">Ekip</span>
         </router-link>
 
-        <router-link v-if="authStore.user?.role === 'hr_admin'" to="/admin/leaves" class="nav-item">
+        <router-link v-if="authStore.isHrAdmin === 'hr_admin'" to="/admin/leaves" class="nav-item">
           <span class="icon">📄</span>
           <span v-if="isSidebarExpanded" class="text">İzin Yönetimi</span>
         </router-link>

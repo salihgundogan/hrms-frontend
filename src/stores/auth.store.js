@@ -1,3 +1,5 @@
+// src/stores/auth.store.js
+
 import { defineStore } from 'pinia';
 import { supabase } from '@/services/supabaseClient';
 
@@ -6,31 +8,35 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     loading: true,
   }),
+  // --- YENİ KISIM: GETTERS ---
+  getters: {
+    // Bu getter, kullanıcının HR Admin olup olmadığını anlık olarak kontrol eder.
+    isHrAdmin: (state) => state.user?.role === 'hr_admin',
+
+    // Bu getter, kullanıcının Yönetici olup olmadığını anlık olarak kontrol eder.
+    isManager: (state) => state.user?.role === 'manager',
+
+    // Bu getter, Ekip linkini göstermek için ikisini birden kontrol eder.
+    isManagerOrHr: (state) => ['manager', 'hr_admin'].includes(state.user?.role),
+  },
+  // -------------------------
   actions: {
-    // DÜZELTME: Bu fonksiyon artık tam profili çekiyor.
+    // initialize ve diğer fonksiyonlarınızda bir değişiklik yapmanıza gerek yok,
+    // onlar zaten doğru çalışıyor.
     async initialize() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          // Oturum varsa, veritabanından tam profili (rol dahil) çekelim.
-          const { data: profile, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
+          const { data: profile, error } = await supabase.from('users').select('*').eq('id', session.user.id).single();
           if (error || !profile) {
-            // Profil bulunamazsa güvenli bir şekilde çıkış yap.
             await this.logout();
           } else {
-            // Hem kimlik hem de profil bilgisini birleştir.
             this.user = { ...session.user, ...profile };
           }
         } else {
           this.user = null;
         }
       } catch (error) {
-        console.error("Oturum kontrolü hatası:", error);
         this.user = null;
       } finally {
         this.loading = false;
