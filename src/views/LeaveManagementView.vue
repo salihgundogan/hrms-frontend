@@ -1,5 +1,3 @@
-<!-- src/views/LeaveManagementView.vue -->
-
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useLeaveStore } from '../stores/leave.store';
@@ -16,16 +14,24 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('tr-TR', options);
 }
 
+// === DÜZELTİLMİŞ FONKSİYON ===
 async function handleStatusUpdate(request, newStatus) {
-  requestStatus.value[request.id] = { success: null, error: null, loading: true };
+  const requestId = request.id; // ID'yi bir değişkene alalım
+  requestStatus.value[requestId] = { success: null, error: null, loading: true };
+  
   try {
-    const result = await leaveStore.updateRequestStatus(request.id, newStatus);
-    requestStatus.value[request.id].success = result.message;
+    // 1. DÜZELTME: Doğru fonksiyon adı 'updateLeaveStatus' kullanıldı.
+    await leaveStore.updateLeaveStatus(requestId, newStatus);
+    
+    // 2. DÜZELTME: Başarı mesajını kendimiz oluşturuyoruz.
+    requestStatus.value[requestId].success = "Durum başarıyla güncellendi.";
+
   } catch (error) {
-    requestStatus.value[request.id].error = error;
+    requestStatus.value[requestId].error = error.message || "Bir hata oluştu.";
+    // Hata durumunda, veriyi sunucudan tekrar çekerek tutarlılığı sağla.
     leaveStore.fetchLeaveRequests(); 
   } finally {
-    requestStatus.value[request.id].loading = false;
+    requestStatus.value[requestId].loading = false;
   }
 }
 </script>
