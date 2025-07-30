@@ -2,11 +2,24 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
-import './style.css'; // Veya sizin genel stil dosyanız
+import { useAuthStore } from './stores/auth.store';
+import './style.css'; // veya main.css
 
-const app = createApp(App);
+// Uygulamayı asenkron bir fonksiyon içinde başlatalım
+async function startApp() {
+    const app = createApp(App);
 
-app.use(createPinia());
-app.use(router);
+    // Önce Pinia'yı kur
+    app.use(createPinia());
 
-app.mount('#app');
+    // ÖNEMLİ: Auth store'u çağır ve ilk kontrolün bitmesini BEKLE
+    const authStore = useAuthStore();
+    await authStore.initialize();
+
+    // Oturum kontrolü bittikten SONRA router'ı kur ve uygulamayı mount et
+    app.use(router);
+    app.mount('#app');
+}
+
+// Uygulamayı başlat
+startApp();

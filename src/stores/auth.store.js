@@ -1,45 +1,40 @@
-// src/stores/auth.store.js
-
 import { defineStore } from 'pinia';
 import { supabase } from '@/services/supabaseClient';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    loading: true,
+    // Artık 'loading' durumuna burada ihtiyacımız yok, çünkü main.js bekleyecek.
   }),
-  // --- YENİ KISIM: GETTERS ---
   getters: {
-    // Bu getter, kullanıcının HR Admin olup olmadığını anlık olarak kontrol eder.
     isHrAdmin: (state) => state.user?.role === 'hr_admin',
-
-    // Bu getter, kullanıcının Yönetici olup olmadığını anlık olarak kontrol eder.
     isManager: (state) => state.user?.role === 'manager',
-
-    // Bu getter, Ekip linkini göstermek için ikisini birden kontrol eder.
     isManagerOrHr: (state) => ['manager', 'hr_admin'].includes(state.user?.role),
   },
-  // -------------------------
   actions: {
-    // initialize ve diğer fonksiyonlarınızda bir değişiklik yapmanıza gerek yok,
-    // onlar zaten doğru çalışıyor.
+    // UYGULAMA BAŞLAMADAN ÖNCE ÇALIŞACAK ANA FONKSİYON
     async initialize() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const { data: profile, error } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+          // Oturum varsa, veritabanından tam profili (rol dahil) çekelim.
+          const { data: profile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
           if (error || !profile) {
-            await this.logout();
+            await this.logout(); // Profil yoksa, bozuk oturumu temizle.
           } else {
-            this.user = { ...session.user, ...profile };
+            this.user = { ...session.user, ...profile }; // Kullanıcıyı tam profille ata.
           }
         } else {
           this.user = null;
         }
       } catch (error) {
+        console.error("Oturum kontrolü hatası:", error);
         this.user = null;
-      } finally {
-        this.loading = false;
       }
     },
 
