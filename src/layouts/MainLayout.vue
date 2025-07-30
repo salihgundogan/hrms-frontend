@@ -1,19 +1,15 @@
 <script setup>
-import { ref } from 'vue'; // ref'i import ettiğinizden emin olun
+import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth.store';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const isSidebarExpanded = ref(true);
 
-// EKSİK OLAN KISIM BURASIYDI
-const isSidebarExpanded = ref(true); // Kenar çubuğunun başlangıç durumunu belirler (true = açık)
-
-// Kenar çubuğunu açıp kapatacak fonksiyon
 function toggleSidebar() {
   isSidebarExpanded.value = !isSidebarExpanded.value;
 }
-// ===================================
 
 async function handleLogout() {
   await authStore.logout();
@@ -23,12 +19,7 @@ async function handleLogout() {
 
 <template>
   <div class="main-layout">
-    <aside class="sidebar" :class="{ 'expanded': isSidebarExpanded }" @mouseenter="isSidebarExpanded = true"
-      @mouseleave="isSidebarExpanded = false">
-      <br><br><br>
-      <br><br><br>
-      <br><br><br>
-
+    <aside class="sidebar" :class="{ 'expanded': isSidebarExpanded }">
       <nav class="nav-menu">
         <router-link to="/dashboard" class="nav-item">
           <span class="icon">🏠</span>
@@ -40,37 +31,31 @@ async function handleLogout() {
           <span v-if="isSidebarExpanded" class="text">Profilim</span>
         </router-link>
 
-        <router-link v-if="authStore.userRole === 'manager' || authStore.userRole === 'hr_admin'" to="/team"
-          class="nav-item">
+        <router-link v-if="authStore.user?.role === 'manager' || authStore.user?.role === 'hr_admin'" to="/team" class="nav-item">
           <span class="icon">👥</span>
           <span v-if="isSidebarExpanded" class="text">Ekip</span>
         </router-link>
 
-        <router-link v-if="authStore.userRole === 'hr_admin'" to="/admin/leaves" class="nav-item">
+        <router-link v-if="authStore.user?.role === 'hr_admin'" to="/admin/leaves" class="nav-item">
           <span class="icon">📄</span>
           <span v-if="isSidebarExpanded" class="text">İzin Yönetimi</span>
         </router-link>
       </nav>
 
-      <!-- DÜZELTME: Sidebar Footer geri eklendi -->
       <div class="sidebar-footer">
         <div v-if="authStore.user" class="user-info">
-          <img v-if="authStore.user.profilePicture" :src="`http://localhost:5001${authStore.user.profilePicture}`"
-            alt="Profil Resmi" class="avatar">
-
           <div v-if="isSidebarExpanded" class="user-details">
             <span class="user-name">{{ authStore.user.name }}</span>
             <span class="user-role">{{ authStore.user.role }}</span>
           </div>
         </div>
-
         <button @click="handleLogout" class="nav-item logout-button">
-          <span class="icon">🚪</span> <span v-if="isSidebarExpanded" class="text">Çıkış Yap</span>
+          <span class="icon">🚪</span>
+          <span v-if="isSidebarExpanded" class="text">Çıkış Yap</span>
         </button>
       </div>
     </aside>
 
-    <!-- DÜZELTME: Ana içerik alanından header kaldırıldı -->
     <main class="content">
       <div class="page-content">
         <router-view />

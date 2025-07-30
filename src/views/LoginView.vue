@@ -59,6 +59,7 @@ const handleLogin = async () => {
       
       <div class="extra-links">
         <router-link to="/register" class="link">Hesabınız yok mu? Kayıt olun</router-link>
+        <br>
         <router-link to="/forgot-password" class="link">Şifremi unuttum</router-link>
       </div>
 

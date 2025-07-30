@@ -2,25 +2,37 @@ import { defineStore } from 'pinia';
 import { supabase } from '@/services/supabaseClient';
 
 export const useAuthStore = defineStore('auth', {
-  // Başlangıç durumu: Kullanıcı yok, ve uygulama "yükleniyor" modunda.
   state: () => ({
     user: null,
     loading: true,
   }),
   actions: {
-    // UYGULAMANIN İLK AÇILIŞINDA ÇALIŞACAK TEK VE EN ÖNEMLİ FONKSİYON
+    // DÜZELTME: Bu fonksiyon artık tam profili çekiyor.
     async initialize() {
       try {
-        // Supabase'den mevcut oturum bilgisini al.
         const { data: { session } } = await supabase.auth.getSession();
-        // Oturum varsa kullanıcıyı ata, yoksa null olarak bırak.
-        this.user = session?.user ?? null;
+        if (session) {
+          // Oturum varsa, veritabanından tam profili (rol dahil) çekelim.
+          const { data: profile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error || !profile) {
+            // Profil bulunamazsa güvenli bir şekilde çıkış yap.
+            await this.logout();
+          } else {
+            // Hem kimlik hem de profil bilgisini birleştir.
+            this.user = { ...session.user, ...profile };
+          }
+        } else {
+          this.user = null;
+        }
       } catch (error) {
-        console.error("Oturum kontrolü sırasında hata oluştu:", error);
+        console.error("Oturum kontrolü hatası:", error);
         this.user = null;
       } finally {
-        // NE OLURSA OLSUN, İŞLEM BİTTİĞİNDE "YÜKLENİYOR" DURUMUNU BİTİR.
-        // Takılı kalmayı engelleyen en kritik satır budur.
         this.loading = false;
       }
     },
