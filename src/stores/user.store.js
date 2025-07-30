@@ -13,12 +13,12 @@ export const useUserStore = defineStore('users', {
         async fetchAllUsers() {
             this.isLoading = true;
             try {
-                // Supabase Sorgusu: 'Users' tablosundan tüm satırları (*) seç.
+                // DÜZELTME: Tablo adı küçük harfle 'users' olarak değiştirildi.
                 const { data, error } = await supabase
-                    .from('Users')
+                    .from('users')
                     .select('*');
 
-                if (error) {throw error};
+                if (error) { throw error };
                 this.users = data;
             } catch (error) {
                 console.error("Tüm kullanıcılar alınamadı:", error.message);
@@ -27,22 +27,21 @@ export const useUserStore = defineStore('users', {
                 this.isLoading = false;
             }
         },
-        
+
         // Sadece yöneticinin kendi ekibini getiren fonksiyon
         async fetchMyTeam() {
             const authStore = useAuthStore();
-            if (!authStore.user) {return};
+            if (!authStore.user) { return };
 
             this.isLoading = true;
             try {
-                // Supabase Sorgusu: 'Users' tablosundan, 'managerId' sütunu
-                // giriş yapmış yöneticinin ID'sine eşit olan tüm satırları seç.
+                // DÜZELTME: Tablo adı küçük harfle 'users' olarak değiştirildi.
                 const { data, error } = await supabase
-                    .from('Users')
+                    .from('users')
                     .select('*')
                     .eq('managerId', authStore.user.id);
 
-                if (error) {throw error};
+                if (error) { throw error };
                 this.team = data;
             } catch (error) {
                 console.error("Ekip üyeleri alınamadı:", error.message);
