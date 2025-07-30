@@ -22,7 +22,7 @@ export const useLeaveStore = defineStore('leave', {
           // İlişkili tablodan da veri çekiyoruz: users tablosundan isim ve email.
           .select('*, employee:users ( name, email )');
 
-        if (error) {throw error};
+        if (error) { throw error };
         this.leaveRequests = data;
       } catch (err) {
         this.error = err.message;
@@ -35,7 +35,7 @@ export const useLeaveStore = defineStore('leave', {
     // Yeni izin talebi oluşturma fonksiyonu
     async createLeaveRequest(requestInfo) {
       const authStore = useAuthStore();
-      if (!authStore.user) {throw new Error("İzin talebi oluşturmak için giriş yapmalısınız.")};
+      if (!authStore.user) { throw new Error("İzin talebi oluşturmak için giriş yapmalısınız.") };
 
       const newRequest = {
         ...requestInfo,
@@ -48,18 +48,44 @@ export const useLeaveStore = defineStore('leave', {
         .insert([newRequest])
         .select();
 
-      if (error) {throw error};
+      if (error) { throw error };
 
       // Yeni talebi lokal listeye de ekle
       this.leaveRequests.push(data[0]);
       return data[0];
-    }, async updateRequestStatus(requestId, newStatus) {
+    },
+    async updateLeaveStatus(requestId, newStatus) {
+      try {
+        const { data, error } = await supabase
+          // DÜZELTME: Tablo adı küçük harfle yazıldı
+          .from('leaverequests')
+          .update({ status: newStatus })
+          .eq('id', requestId)
+          .select()
+          .single();
+
+        if (error) { throw error };
+
+        // Lokal state'i de güncelleyelim ki ekran anında değişsin
+        const index = this.leaveRequests.findIndex(req => req.id === requestId);
+        if (index !== -1) {
+          this.leaveRequests[index].status = newStatus;
+        }
+
+        return data; // Başarılı olursa güncellenmiş veriyi döndür
+
+      } catch (err) {
+        console.error('İzin durumu güncellenirken hata:', err.message);
+        throw err; // Hatanın bileşen tarafından yakalanabilmesi için fırlat
+      }
+    },
+    async updateRequestStatus(requestId, newStatus) {
       const { data, error } = await supabase
         .from('LeaveRequests')
         .update({ status: newStatus })
         .eq('id', requestId);
 
-      if (error) {throw error};
+      if (error) { throw error };
       // Lokal state'i de güncelleyelim
       const index = this.leaveRequests.findIndex(req => req.id === requestId);
       if (index !== -1) {
