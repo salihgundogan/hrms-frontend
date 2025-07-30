@@ -184,20 +184,35 @@ export const useAuthStore = defineStore('auth', {
         throw new Error('Yeni şifreler eşleşmiyor!');
       }
 
-      // 2. Supabase'in kullanıcı şifresini güncelleme fonksiyonunu çağıralım.
-      //    Supabase, mevcut şifreyi kontrol etmez, sadece giriş yapmış olan
-      //    kullanıcının şifresini doğrudan günceller. Bu güvenli bir işlemdir.
-      const { error } = await supabase.auth.updateUser({
+      // 2. Kullanıcının e-posta adresini state'den alalım.
+      if (!this.user || !this.user.email) {
+        throw new Error('Kullanıcı e-postası bulunamadı. Lütfen tekrar giriş yapın.');
+      }
+      const userEmail = this.user.email;
+
+      // 3. YENİ GÜVENLİK ADIMI: Mevcut şifreyi doğrula.
+      //    Bunu, mevcut şifreyle tekrar giriş yapmayı deneyerek yapıyoruz.
+      const { error: checkError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: passwordData.oldPassword,
+      });
+
+      // Eğer bu deneme hata verirse, demek ki mevcut şifre yanlıştır.
+      if (checkError) {
+        throw new Error('Mevcut şifreniz yanlış!');
+      }
+
+      // 4. Mevcut şifre doğruysa, asıl güncelleme işlemini yap.
+      const { error: updateError } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
 
-      if (error) {
-        // Bir hata olursa (örn: yeni şifre çok kısa), bunu fırlatalım.
-        console.error('Şifre değiştirme hatası:', error);
-        throw error;
+      if (updateError) {
+        console.error('Şifre değiştirme hatası:', updateError);
+        throw updateError;
       }
 
-      // 3. Başarılı olduğunda kullanıcıya net bir mesaj döndürelim.
+      // 5. Başarılı olduğunda kullanıcıya net bir mesaj döndürelim.
       return 'Şifreniz başarıyla değiştirildi.';
     },
   },
